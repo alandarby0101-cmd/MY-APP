@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeAI Focus</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap');
+:root{
+  --bg:#02040a;--panel:#080e18;--card:#0b1420;--border:#0e1f32;
+  --accent:#00bfff;--green:#00ff7f;--red:#ff2244;--yellow:#ffcc00;
+  --orange:#ff8800;--text:#5a8aaa;--white:#ddeeff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);font-family:'DM Mono',monospace;color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 70% 40% at 50% 0%,rgba(0,191,255,0.05),transparent);
+  pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:600px;margin:0 auto;padding:12px 12px 60px}
+
+/* SETUP */
+#setup{min-height:100vh;display:flex;flex-direction:column;justify-content:center}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:46px;letter-spacing:6px;color:var(--accent);text-align:center;text-shadow:0 0 30px rgba(0,191,255,0.4)}
+.logo em{color:var(--green);font-style:normal}
+.tagline{text-align:center;font-size:10px;letter-spacing:4px;opacity:0.4;margin:5px 0 30px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--green),transparent)}
+.ct{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;color:var(--accent);margin-bottom:4px}
+.cs{font-size:11px;opacity:0.4;margin-bottom:20px;line-height:1.9}
+.fl{font-size:9px;letter-spacing:3px;opacity:0.5;margin-bottom:5px;display:block}
+.fi{width:100%;background:rgba(0,191,255,0.04);border:1px solid var(--border);border-radius:4px;padding:11px 13px;color:var(--white);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:all 0.2s;margin-bottom:13px}
+.fi:focus{border-color:var(--accent)}
+.fi::placeholder{color:rgba(90,138,170,0.3)}
+.fs{width:100%;background:rgba(0,191,255,0.04);border:1px solid var(--border);border-radius:4px;padding:11px 13px;color:var(--white);font-family:'DM Mono',monospace;font-size:13px;outline:none;margin-bottom:14px;cursor:pointer}
+.fs option{background:#0b1420}
+.launch{width:100%;padding:15px;background:linear-gradient(135deg,rgba(0,191,255,0.1),rgba(0,255,127,0.1));border:1px solid var(--accent);border-radius:4px;color:var(--accent);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:5px;cursor:pointer;transition:all 0.3s}
+.launch:hover{background:linear-gradient(135deg,rgba(0,191,255,0.2),rgba(0,255,127,0.2));box-shadow:0 0 30px rgba(0,191,255,0.15)}
+.snote{margin-top:12px;padding:10px;background:rgba(0,255,127,0.04);border:1px solid rgba(0,255,127,0.12);border-radius:4px;font-size:10px;color:rgba(0,255,127,0.55);text-align:center;line-height:1.8}
+
+/* DASHBOARD */
+#dash{display:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding-bottom:11px;margin-bottom:13px;border-bottom:1px solid var(--border)}
+.tlogo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:4px;color:var(--accent)}
+.tlogo em{color:var(--green);font-style:normal}
+.tlive{display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:2px}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.4s infinite}
+.kbtn{background:transparent;border:1px solid var(--border);border-radius:3px;padding:5px 9px;color:var(--text);font-family:'DM Mono',monospace;font-size:9px;cursor:pointer}
+.kbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* COIN + TF */
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.pill{padding:5px 12px;border:1px solid var(--border);border-radius:20px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--text)}
+.pill.ca.on{border-color:var(--accent);color:var(--accent);background:rgba(0,191,255,0.07)}
+.pill.ta.on{border-color:var(--green);color:var(--green);background:rgba(0,255,127,0.07)}
+.pill:hover{opacity:0.8}
+.srow{display:flex;gap:7px;margin-bottom:13px}
+.si{flex:1;background:rgba(0,191,255,0.03);border:1px solid var(--border);border-radius:4px;padding:8px 11px;color:var(--white);font-family:'DM Mono',monospace;font-size:13px;outline:none}
+.si:focus{border-color:var(--accent)}
+.si::placeholder{color:rgba(90,138,170,0.25)}
+.gb{padding:8px 13px;background:transparent;border:1px solid var(--accent);border-radius:4px;color:var(--accent);font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;cursor:pointer}
+
+/* PRICE BAR */
+.pbar{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:relative;overflow:hidden}
+.pbar::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.5}
+.pleft{}
+.pname{font-size:9px;letter-spacing:4px;opacity:0.4;margin-bottom:2px}
+.pprice{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--white);line-height:1;letter-spacing:1px}
+.pchg{font-size:11px;padding:3px 9px;border-radius:3px;margin-top:4px;display:inline-block}
+.pchg.up{color:var(--green);background:rgba(0,255,127,0.08);border:1px solid rgba(0,255,127,0.18)}
+.pchg.dn{color:var(--red);background:rgba(255,34,68,0.08);border:1px solid rgba(255,34,68,0.18)}
+.pstats{display:flex;flex-direction:column;gap:5px;text-align:right}
+.pstat{font-size:10px}
+.pstat span{color:var(--white)}
+.refresh-cd{font-size:9px;opacity:0.3;margin-top:4px}
+
+/* ══════════════════════════════════════════
+   TREND PANEL — THE MOST IMPORTANT THING
+══════════════════════════════════════════ */
+.trend-panel{border-radius:8px;padding:20px;margin-bottom:11px;position:relative;overflow:hidden;transition:all 0.5s}
+.trend-panel.UP{background:rgba(0,255,127,0.05);border:2px solid rgba(0,255,127,0.4)}
+.trend-panel.DOWN{background:rgba(255,34,68,0.05);border:2px solid rgba(255,34,68,0.4)}
+.trend-panel.SIDEWAYS{background:rgba(255,204,0,0.05);border:2px solid rgba(255,204,0,0.3)}
+.trend-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.trend-panel.UP::before{background:linear-gradient(90deg,transparent,var(--green),transparent)}
+.trend-panel.DOWN::before{background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.trend-panel.SIDEWAYS::before{background:linear-gradient(90deg,transparent,var(--yellow),transparent)}
+.trend-label{font-size:9px;letter-spacing:4px;opacity:0.5;margin-bottom:8px}
+.trend-main{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.trend-arrow{font-size:52px;line-height:1}
+.trend-right{}
+.trend-word{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:3px;line-height:1}
+.trend-panel.UP .trend-word{color:var(--green);text-shadow:0 0 20px rgba(0,255,127,0.4)}
+.trend-panel.DOWN .trend-word{color:var(--red);text-shadow:0 0 20px rgba(255,34,68,0.4)}
+.trend-panel.SIDEWAYS .trend-word{color:var(--yellow);text-shadow:0 0 20px rgba(255,204,0,0.4)}
+.trend-desc{font-size:11px;line-height:1.9;opacity:0.8;color:var(--white);margin-bottom:0}
+.trend-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:12px}
+.ts{background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.05);border-radius:4px;padding:8px;text-align:center}
+.ts-l{font-size:8px;letter-spacing:2px;opacity:0.4;margin-bottom:3px}
+.ts-v{font-size:12px;color:var(--white)}
+
+/* ══════════════════════════════════════════
+   TRAFFIC LIGHT — TRADE OR NOT
+══════════════════════════════════════════ */
+.tlight-panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:11px;position:relative;overflow:hidden}
+.tlight-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.4}
+.tl-title{font-size:9px;letter-spacing:3px;opacity:0.35;margin-bottom:14px}
+.tlight-row{display:flex;align-items:center;gap:16px}
+.tlight-lights{display:flex;flex-direction:column;gap:8px}
+.tl{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.08);transition:all 0.5s;opacity:0.15}
+.tl.on.g{background:var(--green);border-color:var(--green);box-shadow:0 0 16px var(--green);opacity:1}
+.tl.on.y{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 16px var(--yellow);opacity:1}
+.tl.on.r{background:var(--red);border-color:var(--red);box-shadow:0 0 16px var(--red);opacity:1}
+.tlight-right{flex:1}
+.tl-status{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;margin-bottom:6px}
+.tl-status.GO{color:var(--green)}
+.tl-status.WAIT{color:var(--yellow)}
+.tl-status.STOP{color:var(--red)}
+.tl-reason{font-size:11px;line-height:1.9;color:var(--white);opacity:0.8}
+.tl-checklist{margin-top:12px;display:flex;flex-direction:column;gap:5px}
+.tlc{display:flex;align-items:center;gap:8px;font-size:10px}
+.tlc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tlc-dot.pass{background:var(--green)}
+.tlc-dot.fail{background:var(--red)}
+.tlc-dot.warn{background:var(--yellow)}
+.tlc-text{opacity:0.75}
+
+/* SIGNAL */
+.sig-panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:11px;position:relative;overflow:hidden}
+.sig-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:0.4}
+.sig-title{font-size:9px;letter-spacing:3px;opacity:0.35;margin-bottom:14px}
+.sig-main{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.sbadge{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:3px;padding:10px 20px;border-radius:5px;flex-shrink:0}
+.sbadge.BUY{color:var(--green);background:rgba(0,255,127,0.07);border:2px solid var(--green);text-shadow:0 0 20px rgba(0,255,127,0.5)}
+.sbadge.SELL{color:var(--red);background:rgba(255,34,68,0.07);border:2px solid var(--red);text-shadow:0 0 20px rgba(255,34,68,0.5)}
+.sbadge.WAIT{color:var(--yellow);background:rgba(255,204,0,0.07);border:2px solid var(--yellow);text-shadow:0 0 20px rgba(255,204,0,0.5)}
+.sright{flex:1}
+.sreason{font-size:11px;line-height:1.9;color:var(--white);opacity:0.85;margin-bottom:8px}
+.conf-row{display:flex;align-items:center;gap:8px}
+.cl{font-size:8px;letter-spacing:3px;opacity:0.35;white-space:nowrap}
+.ct2{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.cf{height:100%;border-radius:2px;transition:width 1.2s ease;width:0}
+.cf.BUY{background:linear-gradient(90deg,#006633,var(--green))}
+.cf.SELL{background:linear-gradient(90deg,#880020,var(--red))}
+.cf.WAIT{background:linear-gradient(90deg,#886600,var(--yellow))}
+.cpct{font-size:13px;color:var(--white);min-width:34px;text-align:right;font-family:'Bebas Neue',sans-serif}
+
+/* LEVELS */
+.lv3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.lv{border-radius:5px;padding:13px;text-align:center}
+.lv.en{background:rgba(0,191,255,0.05);border:1px solid rgba(0,191,255,0.22)}
+.lv.tp{background:rgba(0,255,127,0.05);border:1px solid rgba(0,255,127,0.22)}
+.lv.sl{background:rgba(255,34,68,0.05);border:1px solid rgba(255,34,68,0.22)}
+.lv-ico{font-size:16px;margin-bottom:3px}
+.lv-l{font-size:8px;letter-spacing:2px;opacity:0.4;margin-bottom:4px}
+.lv-p{font-family:'Bebas Neue',sans-serif;font-size:22px;margin-bottom:2px}
+.lv.en .lv-p{color:var(--accent)}
+.lv.tp .lv-p{color:var(--green)}
+.lv.sl .lv-p{color:var(--red)}
+.lv-pct{font-size:9px;opacity:0.5}
+.rr-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:4px}
+.rr-l{font-size:9px;letter-spacing:2px;opacity:0.4}
+.rr-v{font-family:'Bebas Neue',sans-serif;font-size:20px}
+.rr-n{font-size:10px;opacity:0.55}
+
+/* KEY LEVELS */
+.kl-panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:11px}
+.kl-title{font-size:9px;letter-spacing:3px;opacity:0.35;margin-bottom:12px}
+.kl4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px}
+.kl{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:9px;text-align:center}
+.kl-l{font-size:8px;letter-spacing:2px;opacity:0.35;margin-bottom:3px}
+.kl-p{font-family:'Bebas Neue',sans-serif;font-size:16px}
+.kl.r1 .kl-p{color:var(--red)}
+.kl.r2 .kl-p{color:rgba(255,34,68,0.5)}
+.kl.s1 .kl-p{color:var(--green)}
+.kl.s2 .kl-p{color:rgba(0,255,127,0.5)}
+.kl-d{font-size:9px;opacity:0.35;margin-top:2px}
+
+/* INDS COMPACT */
+.ind4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px}
+.ic{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:12px}
+.ic-name{font-size:8px;letter-spacing:3px;opacity:0.35;margin-bottom:5px}
+.ic-val{font-family:'Bebas Neue',sans-serif;font-size:22px;margin-bottom:3px}
+.ic-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.ic-fill{height:100%;border-radius:2px;transition:width 0.8s ease}
+.ic-st{font-size:9px}
+.bull{color:var(--green)}
+.bear{color:var(--red)}
+.neut{color:var(--yellow)}
+
+/* BOTTOM */
+.bbar{display:flex;align-items:center;justify-content:space-between;font-size:9px;opacity:0.3;margin-top:8px}
+.rbtn{background:transparent;border:1px solid var(--border);border-radius:3px;padding:5px 9px;color:var(--text);font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;opacity:1}
+.rbtn:hover{border-color:var(--accent);color:var(--accent)}
+.err{background:rgba(255,34,68,0.07);border:1px solid rgba(255,34,68,0.18);border-radius:4px;padding:10px;color:var(--red);font-size:11px;margin-bottom:11px;display:none;line-height:1.8}
+.err.on{display:block}
+.disc{text-align:center;font-size:8px;letter-spacing:1px;opacity:0.15;margin-top:22px;line-height:2}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade{animation:fadeUp 0.4s ease both}
+
+@media(max-width:480px){
+  .lv3{grid-template-columns:1fr}
+  .kl4{grid-template-columns:1fr 1fr}
+  .pprice{font-size:36px}
+  .sbadge{font-size:32px;padding:8px 14px}
+  .trend-word{font-size:34px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SETUP -->
+<div id="setup">
+  <div class="logo">TRADE<em>AI</em></div>
+  <div class="tagline">FOCUS · TREND FIRST · CONFIRM BEFORE TRADING</div>
+  <div class="card">
+    <div class="ct">// CONNECT BYBIT</div>
+    <div class="cs">Enter your Read-Only API keys. Stored only in your browser. Never transmitted anywhere. 🔒</div>
+    <label class="fl">API KEY</label>
+    <input type="text" class="fi" id="aKey" placeholder="Paste API Key...">
+    <label class="fl">API SECRET</label>
+    <input type="password" class="fi" id="aSec" placeholder="Paste API Secret...">
+    <label class="fl">DEFAULT PAIR</label>
+    <select class="fs" id="dPair">
+      <option value="HBARUSDC">HBAR/USDC</option>
+      <option value="HBARUSDT">HBAR/USDT</option>
+      <option value="BTCUSDT">BTC/USDT</option>
+      <option value="ETHUSDT">ETH/USDT</option>
+      <option value="SOLUSDT">SOL/USDT</option>
+    </select>
+    <label class="fl">MAIN TIMEFRAME</label>
+    <select class="fs" id="dInt">
+      <option value="5">5 Minutes</option>
+      <option value="15" selected>15 Minutes (recommended)</option>
+      <option value="60">1 Hour</option>
+    </select>
+    <button class="launch" onclick="launch()">▶ LAUNCH</button>
+    <div class="snote">🔒 Keys never leave your device · Read-Only = cannot make trades</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash">
+  <div class="topbar">
+    <div class="tlogo">TRADE<em>AI</em> FOCUS</div>
+    <div class="tlive"><span class="ldot"></span>LIVE</div>
+    <button class="kbtn" onclick="showSetup()">⚙ KEYS</button>
+  </div>
+
+  <div class="row">
+    <button class="pill ca on" onclick="swP('HBARUSDC',this)">HBAR/USDC</button>
+    <button class="pill ca" onclick="swP('BTCUSDT',this)">BTC</button>
+    <button class="pill ca" onclick="swP('ETHUSDT',this)">ETH</button>
+    <button class="pill ca" onclick="swP('SOLUSDT',this)">SOL</button>
+    <button class="pill ca" onclick="swP('XRPUSDT',this)">XRP</button>
+  </div>
+  <div class="row" style="margin-bottom:10px">
+    <span style="font-size:8px;letter-spacing:2px;opacity:0.3;margin-right:2px">TF:</span>
+    <button class="pill ta" onclick="swI('5',this)">5m</button>
+    <button class="pill ta on" onclick="swI('15',this)">15m</button>
+    <button class="pill ta" onclick="swI('60',this)">1H</button>
+    <button class="pill ta" onclick="swI('240',this)">4H</button>
+  </div>
+  <div class="srow">
+    <input class="si" id="cPair" placeholder="Any pair e.g. LINKUSDT...">
+    <button class="gb" onclick="srch()">GO</button>
+  </div>
+
+  <div class="err" id="errBox"></div>
+
+  <!-- PRICE -->
+  <div class="pbar fade">
+    <div class="pleft">
+      <div class="pname" id="pName">HBAR/USDC</div>
+      <div class="pprice" id="pPrice">$—</div>
+      <div class="pchg" id="pChg">—</div>
+    </div>
+    <div class="pstats">
+      <div class="pstat">H: <span id="pH">—</span></div>
+      <div class="pstat">L: <span id="pL">—</span></div>
+      <div class="pstat">Vol: <span id="pV">—</span></div>
+      <div class="refresh-cd" id="cdTxt">—</div>
+    </div>
+  </div>
+
+  <!-- ══ TREND — BIGGEST MOST IMPORTANT ══ -->
+  <div class="trend-panel SIDEWAYS fade" id="trendPanel">
+    <div class="trend-label">// TREND DIRECTION — WHAT IS THE MARKET DOING?</div>
+    <div class="trend-main">
+      <div class="trend-arrow" id="trendArrow">➡️</div>
+      <div class="trend-right">
+        <div class="trend-word" id="trendWord">SIDEWAYS</div>
+        <div class="trend-desc" id="trendDesc">Analysing trend from candles...</div>
+      </div>
+    </div>
+    <div class="trend-stats">
+      <div class="ts"><div class="ts-l">STRUCTURE</div><div class="ts-v" id="tsStr">—</div></div>
+      <div class="ts"><div class="ts-l">EMA STACK</div><div class="ts-v" id="tsEma">—</div></div>
+      <div class="ts"><div class="ts-l">HIGHER TF</div><div class="ts-v" id="tsHtf">—</div></div>
+    </div>
+  </div>
+
+  <!-- ══ TRAFFIC LIGHT ══ -->
+  <div class="tlight-panel fade">
+    <div class="tl-title">// SHOULD YOU TRADE RIGHT NOW?</div>
+    <div class="tlight-row">
+      <div class="tlight-lights">
+        <div class="tl g" id="tlG"></div>
+        <div class="tl y" id="tlY"></div>
+        <div class="tl r" id="tlR"></div>
+      </div>
+      <div class="tlight-right">
+        <div class="tl-status GO" id="tlStatus">—</div>
+        <div class="tl-reason" id="tlReason">Calculating...</div>
+      </div>
+    </div>
+    <div class="tl-checklist" id="tlChecks"></div>
+  </div>
+
+  <!-- ══ SIGNAL ══ -->
+  <div class="sig-panel fade">
+    <div class="sig-title">// SIGNAL — ONLY VALID WHEN TRAFFIC LIGHT IS GREEN</div>
+    <div class="sig-main">
+      <div class="sbadge WAIT" id="sigBadge">—</div>
+      <div class="sright">
+        <div class="sreason" id="sigReason">—</div>
+        <div class="conf-row">
+          <div class="cl">CONFIDENCE</div>
+          <div class="ct2"><div class="cf WAIT" id="cFill"></div></div>
+          <div class="cpct" id="cPct">—%</div>
+        </div>
+      </div>
+    </div>
+    <!-- LEVELS -->
+    <div class="lv3">
+      <div class="lv en"><div class="lv-ico">📍</div><div class="lv-l">ENTRY</div><div class="lv-p" id="lvEn">—</div><div class="lv-pct">Current price</div></div>
+      <div class="lv tp"><div class="lv-ico">🎯</div><div class="lv-l">TAKE PROFIT</div><div class="lv-p" id="lvTP">—</div><div class="lv-pct" id="lvTPp">—</div></div>
+      <div class="lv sl"><div class="lv-ico">🛑</div><div class="lv-l">STOP LOSS</div><div class="lv-p" id="lvSL">—</div><div class="lv-pct" id="lvSLp">—</div></div>
+    </div>
+    <div class="rr-row">
+      <span class="rr-l">RISK / REWARD</span>
+      <span class="rr-v" id="rrV">—</span>
+      <span class="rr-n" id="rrN">—</span>
+    </div>
+  </div>
+
+  <!-- KEY LEVELS -->
+  <div class="kl-panel fade">
+    <div class="kl-title">// KEY PRICE LEVELS</div>
+    <div class="kl4">
+      <div class="kl r1"><div class="kl-l">RESIST 1</div><div class="kl-p" id="kR1">—</div><div class="kl-d" id="kR1d">—</div></div>
+      <div class="kl r2"><div class="kl-l">RESIST 2</div><div class="kl-p" id="kR2">—</div><div class="kl-d" id="kR2d">—</div></div>
+      <div class="kl s1"><div class="kl-l">SUPPORT 1</div><div class="kl-p" id="kS1">—</div><div class="kl-d" id="kS1d">—</div></div>
+      <div class="kl s2"><div class="kl-l">SUPPORT 2</div><div class="kl-p" id="kS2">—</div><div class="kl-d" id="kS2d">—</div></div>
+    </div>
+  </div>
+
+  <!-- 4 KEY INDICATORS -->
+  <div class="ind4 fade">
+    <div class="ic">
+      <div class="ic-name">RSI (14)</div>
+      <div class="ic-val" id="iRsi">—</div>
+      <div class="ic-bar"><div class="ic-fill" id="iRsiF"></div></div>
+      <div class="ic-st" id="iRsiS">—</div>
+    </div>
+    <div class="ic">
+      <div class="ic-name">MACD</div>
+      <div class="ic-val" id="iMacd">—</div>
+      <div class="ic-bar"><div class="ic-fill" id="iMacdF"></div></div>
+      <div class="ic-st" id="iMacdS">—</div>
+    </div>
+    <div class="ic">
+      <div class="ic-name">VOLUME</div>
+      <div class="ic-val" id="iVol">—</div>
+      <div class="ic-bar"><div class="ic-fill" id="iVolF"></div></div>
+      <div class="ic-st" id="iVolS">—</div>
+    </div>
+    <div class="ic">
+      <div class="ic-name">BOLLINGER</div>
+      <div class="ic-val" id="iBb">—</div>
+      <div class="ic-bar"><div class="ic-fill" id="iBbF"></div></div>
+      <div class="ic-st" id="iBbS">—</div>
+    </div>
+  </div>
+
+  <div class="bbar">
+    <span id="lastUpd">—</span>
+    <button class="rbtn" onclick="fetchAll()">↻ REFRESH</button>
+  </div>
+  <div class="disc">⚠️ EDUCATIONAL ONLY · NOT FINANCIAL ADVICE · SIGNALS DO NOT GUARANTEE PROFITS · ALWAYS USE YOUR OWN JUDGEMENT</div>
+</div>
+</div>
+
+<script>
+'use strict';
+let pair='HBARUSDC', iv='15';
+let rt=null, ct=null, cd=5;
+
+// ── Format ─────────────────────────────────────────────────────────
+const f=(n,d)=>{if(!n&&n!==0||isNaN(n))return'—';n=+n;if(d!==undefined)return n.toFixed(d);return n<0.0001?n.toFixed(7):n<0.001?n.toFixed(6):n<0.01?n.toFixed(5):n<1?n.toFixed(4):n<100?n.toFixed(3):n.toFixed(2)};
+const fv=v=>{v=+v;return v>1e9?(v/1e9).toFixed(1)+'B':v>1e6?(v/1e6).toFixed(1)+'M':v>1000?(v/1000).toFixed(1)+'K':v.toFixed(0)};
+const pct=(a,b)=>(((b-a)/a)*100);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const el=id=>document.getElementById(id);
+
+// ── Indicators ─────────────────────────────────────────────────────
+function emaArr(d,p){const k=2/(p+1),o=[];let e=d[0];o.push(e);for(let i=1;i<d.length;i++){e=d[i]*k+e*(1-k);o.push(e);}return o;}
+const lastEma=(d,p)=>emaArr(d,p)[d.length-1];
+const smaLast=(d,p)=>{const s=d.slice(-p);return s.reduce((a,b)=>a+b,0)/s.length;};
+
+function calcRSI(c,p=14){
+  if(c.length<p+2)return 50;
+  let ag=0,al=0;
+  for(let i=1;i<=p;i++){const d=c[i]-c[i-1];d>0?ag+=d:al+=Math.abs(d);}
+  ag/=p;al/=p;
+  for(let i=p+1;i<c.length;i++){const d=c[i]-c[i-1];ag=(ag*(p-1)+(d>0?d:0))/p;al=(al*(p-1)+(d<0?Math.abs(d):0))/p;}
+  return al===0?100:100-(100/(1+(ag/al)));
+}
+
+function calcMACD(c){
+  if(c.length<35)return{hist:0,bullish:false,crossUp:false,crossDown:false};
+  const e12=emaArr(c,12),e26=emaArr(c,26);
+  const ml=e12.map((v,i)=>v-e26[i]);
+  const sl=emaArr(ml.slice(9),9);
+  const last=ml[ml.length-1],sig=sl[sl.length-1];
+  const prev=ml[ml.length-2]||last,ps=sl[sl.length-2]||sig;
+  return{hist:last-sig,bullish:last>sig,crossUp:last>sig&&prev<=ps,crossDown:last<sig&&prev>=ps};
+}
+
+function calcBB(c,p=20){
+  const s=c.slice(-p);
+  const mid=s.reduce((a,b)=>a+b,0)/p;
+  const std=Math.sqrt(s.reduce((a,b)=>a+(b-mid)**2,0)/p);
+  const upper=mid+2*std,lower=mid-2*std;
+  const price=c[c.length-1];
+  const pctB=(upper-lower)>0?(price-lower)/(upper-lower):0.5;
+  const bw=(upper-lower)/mid;
+  return{upper,lower,mid,pctB,bw,squeeze:bw<0.015};
+}
+
+function calcATR(h,l,c,p=14){
+  const trs=[];
+  for(let i=1;i<c.length;i++)trs.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));
+  if(!trs.length)return 0;
+  let a=trs.slice(0,Math.min(p,trs.length)).reduce((x,y)=>x+y,0)/Math.min(p,trs.length);
+  for(let i=p;i<trs.length;i++)a=(a*(p-1)+trs[i])/p;
+  return a;
+}
+
+// ── TREND DETECTION — CORE LOGIC ──────────────────────────────────
+// Real trend = Higher Highs + Higher Lows (uptrend) or Lower Highs + Lower Lows (downtrend)
+function detectTrend(highs, lows, closes, ema9, ema21, ema50){
+  const n = closes.length;
+  const lookback = Math.min(20, n);
+
+  // Find swing highs and lows over last N candles
+  const swH=[], swL=[];
+  for(let i=2;i<lookback-2;i++){
+    const idx=n-lookback+i;
+    if(highs[idx]>highs[idx-1]&&highs[idx]>highs[idx-2]&&highs[idx]>highs[idx+1]&&highs[idx]>highs[idx+2])swH.push(highs[idx]);
+    if(lows[idx]<lows[idx-1]&&lows[idx]<lows[idx-2]&&lows[idx]<lows[idx+1]&&lows[idx]<lows[idx+2])swL.push(lows[idx]);
+  }
+
+  // Structure analysis
+  let hhhl=0,lhll=0;
+  for(let i=1;i<swH.length;i++)swH[i]>swH[i-1]?hhhl++:lhll++;
+  for(let i=1;i<swL.length;i++)swL[i]>swL[i-1]?hhhl++:lhll++;
+
+  // EMA alignment
+  const emaUp=ema9>ema21&&ema21>ema50;
+  const emaDown=ema9<ema21&&ema21<ema50;
+  const price=closes[n-1];
+  const priceAboveAll=price>ema9&&price>ema21&&price>ema50;
+  const priceBelowAll=price<ema9&&price<ema21&&price<ema50;
+
+  // Slope of EMA21 over last 5 candles
+  const ema21Arr=emaArr(closes,21);
+  const ema21Slope=(ema21Arr[ema21Arr.length-1]-ema21Arr[ema21Arr.length-6])/ema21Arr[ema21Arr.length-6]*100;
+
+  // Price vs recent range
+  const recentH=Math.max(...highs.slice(-20));
+  const recentL=Math.min(...lows.slice(-20));
+  const rangePct=(price-recentL)/(recentH-recentL||1);
+
+  let trend='SIDEWAYS', strength=0, desc='', structure='';
+
+  const bullScore=(emaUp?3:0)+(priceAboveAll?2:0)+(hhhl>lhll?2:0)+(ema21Slope>0.05?2:0)+(rangePct>0.6?1:0);
+  const bearScore=(emaDown?3:0)+(priceBelowAll?2:0)+(lhll>hhhl?2:0)+(ema21Slope<-0.05?2:0)+(rangePct<0.4?1:0);
+
+  if(bullScore>=6){
+    trend='UP';
+    strength=clamp(bullScore*10,60,95);
+    if(bullScore>=8){desc='Strong uptrend confirmed. EMAs aligned up, price making higher highs and higher lows. Look for dips to buy into, not chasing highs.';}
+    else{desc='Uptrend in progress. Price above key EMAs with bullish structure. Wait for a pullback to support before buying — not at current highs.';}
+    structure=swH.length>=2&&swH[swH.length-1]>swH[swH.length-2]?'Higher Highs ✅':'Building up';
+  } else if(bearScore>=6){
+    trend='DOWN';
+    strength=clamp(bearScore*10,60,95);
+    if(bearScore>=8){desc='Strong downtrend confirmed. EMAs aligned down, price making lower highs and lower lows. Do not try to catch the bottom — wait for reversal signals.';}
+    else{desc='Downtrend in progress. Price below EMAs with bearish structure. Only trade with the trend — look for shorts at resistance, not longs.';}
+    structure=swL.length>=2&&swL[swL.length-1]<swL[swL.length-2]?'Lower Lows ✅':'Breaking down';
+  } else {
+    trend='SIDEWAYS';
+    strength=50;
+    desc='No clear trend right now. Price is ranging between support and resistance. Best strategy: buy near support, sell near resistance. Avoid breakout trades until direction is clear.';
+    structure='Ranging / No clear structure';
+  }
+
+  const emaLabel=emaUp?'Bullish ▲':emaDown?'Bearish ▼':'Mixed ↔';
+  const ema21SlopeStr=ema21Slope>0.1?'Rising fast':ema21Slope>0?'Rising':ema21Slope<-0.1?'Falling fast':'Falling';
+
+  return{trend,strength,desc,structure,emaLabel,ema21SlopeStr,bullScore,bearScore,ema21Slope};
+}
+
+// ── TRAFFIC LIGHT ──────────────────────────────────────────────────
+function trafficLight(trendData, rsi, macd, bb, volRatio, change24h, price, sr){
+  const checks=[];
+  let green=0, red=0;
+  const {trend}=trendData;
+
+  // 1. Is there a clear trend?
+  if(trend!=='SIDEWAYS'){green++;checks.push({pass:true,text:`Trend is clear: ${trend}TREND`});}
+  else{red++;checks.push({pass:false,text:'No clear trend — ranging market, higher risk'});}
+
+  // 2. RSI not in extreme overbought at top
+  const rsiOk=(trend==='UP'&&rsi<70)||(trend==='DOWN'&&rsi>30)||(trend==='SIDEWAYS'&&rsi>30&&rsi<70);
+  if(rsiOk){green++;checks.push({pass:true,text:`RSI ${rsi.toFixed(0)} — not in extreme zone`});}
+  else{red++;checks.push({pass:false,text:`RSI ${rsi.toFixed(0)} — ${rsi>70?'overbought, wait for pullback':'oversold, wait for bounce'}`});}
+
+  // 3. MACD aligned with trend
+  const macdAligned=(trend==='UP'&&macd.bullish)||(trend==='DOWN'&&!macd.bullish);
+  if(macdAligned){green++;checks.push({pass:true,text:`MACD aligned with ${trend}TREND`});}
+  else{checks.push({pass:'warn',text:'MACD not yet aligned with trend — wait'});} // warn, not fail
+
+  // 4. Volume confirmation
+  if(volRatio>0.8){green++;checks.push({pass:true,text:`Volume ${volRatio.toFixed(1)}x average — market active`});}
+  else{checks.push({pass:'warn',text:`Low volume (${volRatio.toFixed(1)}x avg) — weak conviction`});}
+
+  // 5. Not at major resistance (for buy) or support (for sell)
+  const distToR=Math.abs(pct(price,sr.r1));
+  const distToS=Math.abs(pct(price,sr.s1));
+  if(trend==='UP'&&distToR>1){green++;checks.push({pass:true,text:`Room to resistance: +${distToR.toFixed(1)}%`});}
+  else if(trend==='UP'){red++;checks.push({pass:false,text:`Only ${distToR.toFixed(1)}% to resistance — risky entry`});}
+  else if(trend==='DOWN'&&distToS>1){green++;checks.push({pass:true,text:`Room to support: ${distToS.toFixed(1)}%`});}
+  else if(trend==='DOWN'){red++;checks.push({pass:false,text:`Only ${distToS.toFixed(1)}% to support — risky short`});}
+
+  // 6. Not crazy volatile
+  const tooWild=Math.abs(change24h)>15;
+  if(!tooWild){green++;checks.push({pass:true,text:'24h change normal — not panic conditions'});}
+  else{red++;checks.push({pass:false,text:`Extreme move today (${change24h.toFixed(1)}%) — very risky`});}
+
+  let status, reason;
+  if(red===0&&green>=4){
+    status='GO';
+    reason=`${green}/${checks.length} conditions met. Conditions are good for trading. Signal is reliable. Use the levels below and always respect your stop loss.`;
+  } else if(red>=2){
+    status='STOP';
+    reason=`${red} key conditions failing. This is NOT a good time to trade. Wait for conditions to improve before risking money.`;
+  } else {
+    status='WAIT';
+    reason=`Mixed conditions — some signals good, some not. Not ideal. Wait for more alignment. Patience now saves money later.`;
+  }
+
+  return{status,reason,checks,green,red};
+}
+
+// ── SIGNAL ENGINE ──────────────────────────────────────────────────
+function signalEngine(trendData, rsi, macd, bb, price, highs, lows, atr, tlight){
+  const {trend}=trendData;
+  let action, reason, conf=50;
+
+  // Only give strong signal when traffic light is GO or WAIT with good trend
+  if(tlight.status==='STOP'){
+    action='WAIT';
+    reason='⛔ Traffic light is RED — do not trade now. Wait for conditions to improve.';
+    conf=30;
+  } else if(trend==='UP'){
+    // In uptrend: look for buy dips
+    const pullback=rsi<55&&price<lastEma([...lows.slice(-50),...[price]].map((_,i,a)=>a[i]),21)*1.005;
+    const momentum=macd.bullish&&rsi>40&&rsi<65;
+    if(macd.crossUp&&rsi<60){
+      action='BUY'; conf=82;
+      reason=`✅ UPTREND + MACD bullish crossover + RSI ${rsi.toFixed(0)} in healthy zone. Strong buy signal. Enter on this candle close.`;
+    } else if(momentum&&bb.pctB>0.3&&bb.pctB<0.7){
+      action='BUY'; conf=72;
+      reason=`📈 UPTREND with bullish momentum. RSI ${rsi.toFixed(0)} healthy, MACD positive, price mid-Bollinger. Good buy opportunity.`;
+    } else if(rsi>65||bb.pctB>0.85){
+      action='WAIT'; conf=45;
+      reason=`⚠️ UPTREND but price is extended (RSI ${rsi.toFixed(0)}, BB ${(bb.pctB*100).toFixed(0)}%). Wait for a pullback to EMA before buying. Chasing highs = bad risk.`;
+    } else {
+      action='WAIT'; conf=50;
+      reason=`↗️ UPTREND confirmed but no clean entry yet. Wait for RSI to dip below 55 or price to pull back to EMA21 before entering.`;
+    }
+  } else if(trend==='DOWN'){
+    if(macd.crossDown&&rsi>40){
+      action='SELL'; conf=80;
+      reason=`🔴 DOWNTREND + MACD bearish crossover + RSI ${rsi.toFixed(0)}. Strong sell signal. Do not buy here — price likely heading lower.`;
+    } else if(!macd.bullish&&rsi>55){
+      action='SELL'; conf=70;
+      reason=`📉 DOWNTREND with bearish momentum. RSI ${rsi.toFixed(0)} elevated, MACD negative. Avoid buying — wait for trend reversal before entry.`;
+    } else if(rsi<35){
+      action='WAIT'; conf=45;
+      reason=`⚠️ DOWNTREND but RSI ${rsi.toFixed(0)} is oversold — possible bounce. Do not short here. Wait to see if bounce holds or fails before deciding.`;
+    } else {
+      action='WAIT'; conf=50;
+      reason=`↘️ DOWNTREND confirmed. Best to stay out until trend reverses. Wait for higher timeframe to turn bullish.`;
+    }
+  } else {
+    // SIDEWAYS
+    if(bb.pctB<0.15&&rsi<40){
+      action='BUY'; conf=65;
+      reason=`📊 SIDEWAYS market — price at lower Bollinger Band with RSI ${rsi.toFixed(0)} (oversold). Range bounce buy opportunity. Target mid/upper band.`;
+    } else if(bb.pctB>0.85&&rsi>60){
+      action='SELL'; conf=65;
+      reason=`📊 SIDEWAYS market — price at upper Bollinger Band with RSI ${rsi.toFixed(0)} (overbought). Range sell opportunity. Target mid/lower band.`;
+    } else {
+      action='WAIT'; conf=40;
+      reason=`↔️ SIDEWAYS market with price in the middle. No clear edge. Wait for price to reach support or resistance before acting.`;
+    }
+  }
+
+  // ── ACCURATE STOP LOSS & TAKE PROFIT ──
+  // Use last 30 candles for swing levels
+  const lb=Math.min(30,highs.length);
+  const rH=highs.slice(-lb), rL=lows.slice(-lb);
+  const swingLow=Math.min(...rL);
+  const swingHigh=Math.max(...rH);
+  const buf=atr*0.3;
+
+  let SL,TP,tpPct,slPct;
+  if(action==='BUY'){
+    SL=swingLow-buf;
+    const slDist=price-SL;
+    // Aim for 2.5x reward
+    TP=Math.min(price+(slDist*2.5), swingHigh);
+    // Make sure TP is at least 1% away
+    if((TP-price)/price<0.005)TP=price*1.01;
+  } else if(action==='SELL'){
+    SL=swingHigh+buf;
+    const slDist=SL-price;
+    TP=Math.max(price-(slDist*2.5), swingLow);
+    if((price-TP)/price<0.005)TP=price*0.99;
+  } else {
+    SL=swingLow-buf;
+    TP=swingHigh;
+  }
+
+  tpPct=pct(price,TP);
+  slPct=pct(price,SL);
+  const rr=slPct!==0?Math.abs(tpPct/slPct):0;
+
+  return{action,reason,conf,SL,TP,tpPct,slPct,rr};
+}
+
+// ── S/R Levels ─────────────────────────────────────────────────────
+function srLevels(h,l,price){
+  const n=Math.min(100,h.length);
+  const rh=[...h.slice(-n)].sort((a,b)=>a-b);
+  const rl=[...l.slice(-n)].sort((a,b)=>b-a);
+  const res=rh.filter(x=>x>price*1.001);
+  const sup=rl.filter(x=>x<price*0.999);
+  const cluster=(arr,t=0.004)=>{const o=[];for(const v of arr){if(!o.find(x=>Math.abs(x-v)/v<t))o.push(v);}return o;};
+  const rc=cluster(res),sc=cluster(sup);
+  return{r1:rc[0]||price*1.015,r2:rc[1]||price*1.03,s1:sc[0]||price*0.985,s2:sc[1]||price*0.97};
+}
+
+// ── API ─────────────────────────────────────────────────────────────
+async function bybit(path,params={}){
+  const u=new URL('https://api.bybit.com'+path);
+  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
+  const r=await fetch(u);
+  const d=await r.json();
+  if(d.retCode!==0)throw new Error(d.retMsg||'API error');
+  return d.result;
+}
+
+// ── MAIN FETCH ──────────────────────────────────────────────────────
+async function fetchAll(){
+  el('errBox').classList.remove('on');
+  try{
+    // Fetch current TF + higher TF for context
+    const higherTF=iv==='5'?'60':iv==='15'?'60':iv==='60'?'240':'D';
+    const [tick, main, higher]=await Promise.all([
+      bybit('/v5/market/tickers',{category:'spot',symbol:pair}),
+      bybit('/v5/market/kline',{category:'spot',symbol:pair,interval:iv,limit:200}),
+      bybit('/v5/market/kline',{category:'spot',symbol:pair,interval:higherTF,limit:100})
+    ]);
+
+    const t=tick.list[0];
+    const price=+t.lastPrice,chg=+t.price24hPcnt*100,h24=+t.highPrice24h,l24=+t.lowPrice24h,vol=+t.volume24h;
+
+    const parse=k=>{const c=[...k.list].reverse();return{o:c.map(x=>+x[1]),h:c.map(x=>+x[2]),l:c.map(x=>+x[3]),c:c.map(x=>+x[4]),v:c.map(x=>+x[5])};};
+    const m=parse(main), hi=parse(higher);
+
+    // Indicators
+    const rsi=calcRSI(m.c);
+    const macd=calcMACD(m.c);
+    const bb=calcBB(m.c);
+    const atr=calcATR(m.h,m.l,m.c);
+    const ema9=lastEma(m.c,9),ema21=lastEma(m.c,21),ema50=lastEma(m.c,50);
+    const sr=srLevels(m.h,m.l,price);
+
+    // Volume ratio
+    const avgVol=m.v.slice(-20).reduce((a,b)=>a+b,0)/20;
+    const curVol=m.v[m.v.length-1];
+    const volRatio=curVol/avgVol;
+
+    // Higher TF trend
+    const htfRsi=calcRSI(hi.c);
+    const htfEma21=lastEma(hi.c,21);
+    const htfTrend=hi.c[hi.c.length-1]>htfEma21?'UP':'DOWN';
+
+    // TREND
+    const trendData=detectTrend(m.h,m.l,m.c,ema9,ema21,ema50);
+
+    // TRAFFIC LIGHT
+    const tlight=trafficLight(trendData,rsi,macd,bb,volRatio,chg,price,sr);
+
+    // SIGNAL
+    const sig=signalEngine(trendData,rsi,macd,bb,price,m.h,m.l,atr,tlight);
+
+    // ── RENDER ──────────────────────────────────────────────────────
+
+    // Price
+    el('pName').textContent=pair.replace('USDC','/USDC').replace('USDT','/USDT');
+    el('pPrice').textContent='$'+f(price);
+    const ce=el('pChg');ce.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';ce.className='pchg '+(chg>=0?'up':'dn');
+    el('pH').textContent='$'+f(h24);
+    el('pL').textContent='$'+f(l24);
+    el('pV').textContent=fv(vol);
+
+    // Trend panel
+    const tp=el('trendPanel');
+    tp.className='trend-panel '+trendData.trend+' fade';
+    el('trendArrow').textContent=trendData.trend==='UP'?'📈':trendData.trend==='DOWN'?'📉':'↔️';
+    el('trendWord').textContent=trendData.trend==='SIDEWAYS'?'SIDEWAYS':trendData.trend+'TREND';
+    el('trendDesc').textContent=trendData.desc;
+    el('tsStr').textContent=trendData.structure;
+    el('tsStr').style.color=trendData.trend==='UP'?'var(--green)':trendData.trend==='DOWN'?'var(--red)':'var(--yellow)';
+    el('tsEma').textContent=trendData.emaLabel;
+    el('tsEma').style.color=trendData.emaLabel.includes('Bullish')?'var(--green)':trendData.emaLabel.includes('Bearish')?'var(--red)':'var(--yellow)';
+    el('tsHtf').textContent=htfTrend+'TREND';
+    el('tsHtf').style.color=htfTrend==='UP'?'var(--green)':'var(--red)';
+
+    // Traffic light
+    el('tlG').className='tl g'+(tlight.status==='GO'?' on':'');
+    el('tlY').className='tl y'+(tlight.status==='WAIT'?' on':'');
+    el('tlR').className='tl r'+(tlight.status==='STOP'?' on':'');
+    el('tlStatus').textContent=tlight.status;
+    el('tlStatus').className='tl-status '+tlight.status;
+    el('tlReason').textContent=tlight.reason;
+    const chk=el('tlChecks');
+    chk.innerHTML=tlight.checks.map(c=>`<div class="tlc"><div class="tlc-dot ${c.pass===true?'pass':c.pass==='warn'?'warn':'fail'}"></div><div class="tlc-text">${c.text}</div></div>`).join('');
+
+    // Signal
+    const sb=el('sigBadge');sb.textContent=sig.action;sb.className='sbadge '+sig.action;
+    el('sigReason').textContent=sig.reason;
+    const cf=el('cFill');cf.className='cf '+sig.action;cf.style.width='0%';
+    el('cPct').textContent=sig.conf+'%';
+    setTimeout(()=>{cf.style.width=sig.conf+'%';},80);
+
+    // Levels
+    el('lvEn').textContent='$'+f(price);
+    el('lvTP').textContent='$'+f(sig.TP);
+    el('lvTPp').textContent=(sig.tpPct>=0?'+':'')+sig.tpPct.toFixed(2)+'%';
+    el('lvSL').textContent='$'+f(sig.SL);
+    el('lvSLp').textContent=sig.slPct.toFixed(2)+'%';
+    const rv=el('rrV');rv.textContent='1 : '+sig.rr.toFixed(2);
+    rv.style.color=sig.rr>=2?'var(--green)':sig.rr>=1?'var(--yellow)':'var(--red)';
+    el('rrN').textContent=sig.rr>=2.5?'🔥 Excellent':sig.rr>=2?'✅ Good':sig.rr>=1.5?'⚠️ Acceptable':sig.rr>=1?'⚠️ Marginal':'❌ Skip this trade';
+
+    // Key levels
+    const kls=(id,v,d)=>{el(id).textContent='$'+f(v);el(id+'d').textContent=(pct(price,v)>=0?'+':'')+pct(price,v).toFixed(2)+'%';};
+    kls('kR1',sr.r1); kls('kR2',sr.r2); kls('kS1',sr.s1); kls('kS2',sr.s2);
+
+    // Indicators
+    const si=(id,val,col,pctW,col2,st,cls)=>{
+      el(id).textContent=val;el(id).style.color=col;
+      el(id+'F').style.width=clamp(pctW,0,100)+'%';el(id+'F').style.background=col2;
+      el(id+'S').textContent=st;el(id+'S').className='ic-st '+cls;
+    };
+    si('iRsi',rsi.toFixed(1),rsi<35?'var(--green)':rsi>65?'var(--red)':'var(--yellow)',rsi,rsi<35?'var(--green)':rsi>65?'var(--red)':'var(--yellow)',
+      rsi<30?'Oversold ▲':rsi<45?'Weakening':rsi>70?'Overbought ▼':rsi>55?'Strong':'Neutral',
+      rsi<45?'bull':rsi>55?'bear':'neut');
+    si('iMacd',macd.hist.toFixed(6),macd.bullish?'var(--green)':'var(--red)',50,macd.bullish?'var(--green)':'var(--red)',
+      macd.crossUp?'Bullish cross 🚀':macd.crossDown?'Bearish cross 💥':macd.bullish?'Bullish momentum':'Bearish momentum',
+      macd.bullish?'bull':'bear');
+    const vStr=volRatio>1.5?'HIGH':volRatio>0.8?'NORMAL':'LOW';
+    si('iVol',vStr,volRatio>1.5?'var(--green)':volRatio<0.5?'var(--red)':'var(--yellow)',clamp(volRatio*50,0,100),volRatio>1.5?'var(--green)':volRatio<0.5?'var(--red)':'var(--yellow)',
+      volRatio>1.5?'Strong confirmation':volRatio<0.5?'Very low — weak signal':'Normal volume',
+      volRatio>1.5?'bull':volRatio<0.5?'bear':'neut');
+    si('iBb',(bb.pctB*100).toFixed(0)+'%',bb.pctB<0.2?'var(--green)':bb.pctB>0.8?'var(--red)':'var(--yellow)',bb.pctB*100,bb.pctB<0.2?'var(--green)':bb.pctB>0.8?'var(--red)':'var(--yellow)',
+      bb.squeeze?'⚡ Squeeze — big move coming!':bb.pctB<0.2?'Near lower band':bb.pctB>0.8?'Near upper band':'Mid range',
+      bb.pctB<0.3?'bull':bb.pctB>0.7?'bear':'neut');
+
+    el('lastUpd').textContent='Updated: '+new Date().toLocaleTimeString();
+    // Flash the live dot to show it updated
+    const ld=document.querySelector('.ldot');
+    if(ld){ld.style.background='var(--accent)';setTimeout(()=>{ld.style.background='var(--green)';},300);}
+    document.title='⚡ '+f(price)+' · TradeAI Focus';
+    cd=5;
+
+  }catch(e){
+    el('errBox').textContent='⚠ '+e.message;
+    el('errBox').classList.add('on');
+  }
+}
+
+// ── Countdown ──────────────────────────────────────────────────────
+function startCD(){
+  if(ct)clearInterval(ct);
+  ct=setInterval(()=>{
+    cd--;
+    const e=el('cdTxt');
+    if(e)e.textContent=cd>0?`↻ ${cd}s`:'↻ Updating...';
+    if(cd<=0)cd=5;
+  },1000);
+}
+
+function swP(p,e){document.querySelectorAll('.ca').forEach(b=>b.classList.remove('on'));e.classList.add('on');pair=p;fetchAll();}
+function swI(i,e){document.querySelectorAll('.ta').forEach(b=>b.classList.remove('on'));e.classList.add('on');iv=i;fetchAll();}
+function srch(){const v=el('cPair').value.trim().toUpperCase();if(!v)return;pair=v.includes('USDT')||v.includes('USDC')?v:v+'USDT';document.querySelectorAll('.ca').forEach(b=>b.classList.remove('on'));fetchAll();}
+
+function launch(){
+  const k=el('aKey').value.trim(),s=el('aSec').value.trim();
+  if(!k||!s){alert('Please enter both keys!');return;}
+  localStorage.setItem('tf_k',k);localStorage.setItem('tf_s',s);
+  pair=el('dPair').value;iv=el('dInt').value;
+  localStorage.setItem('tf_p',pair);localStorage.setItem('tf_i',iv);
+  startDash();
+}
+
+function startDash(){
+  el('setup').style.display='none';el('dash').style.display='block';
+  document.querySelectorAll('.ta').forEach(b=>{b.classList.remove('on');if((b.textContent==='5m'&&iv==='5')||(b.textContent==='15m'&&iv==='15')||(b.textContent==='1H'&&iv==='60')||(b.textContent==='4H'&&iv==='240'))b.classList.add('on');});
+  fetchAll();
+  if(rt)clearInterval(rt);rt=setInterval(fetchAll,5000);
+  startCD();
+}
+
+function showSetup(){if(rt)clearInterval(rt);if(ct)clearInterval(ct);el('dash').style.display='none';el('setup').style.display='block';}
+
+window.onload=()=>{
+  const k=localStorage.getItem('tf_k'),s=localStorage.getItem('tf_s');
+  if(k&&s){el('aKey').value=k;el('aSec').value=s;pair=localStorage.getItem('tf_p')||'HBARUSDC';iv=localStorage.getItem('tf_i')||'15';el('dPair').value=pair;el('dInt').value=iv;startDash();}
+};
+</script>
+</body>
+</html>
